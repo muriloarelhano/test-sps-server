@@ -1,0 +1,15 @@
+services:
+  sps-db:
+    image: postgres:16
+    container_name: sps-db
+    ports:
+      - 5432:5432
+    volumes:
+      - sps-data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_DB: sps
+      POSTGRES_USER: adminadmin
+      POSTGRES_PASSWORD: adminadmin
+
+volumes:
+  sps-data:

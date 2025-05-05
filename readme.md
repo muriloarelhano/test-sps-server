@@ -1,3 +1,10 @@
+# Como rodar 
+
+Primeiramente o projeto está no formado ESM não CJS como antes, atente-se ao package json, use o YARN para instalar as dependências do projeto antes de tudo.
+
+1. Use o docker compose `docker compose up -d` para iniciar o banco de dados
+2. Aplique as migrações do banco usando a ferramenta do drizzle `yarn drizzle-kit push`
+
 # Teste NODE Server
 
 - Criar um CRUD (API REST) em node para cadastro de usuários
@@ -19,3 +26,4 @@
 - Não deve ser possível cadastrar o e-mail já cadastrado
 - Deve ser possível remover usuário
 - Deve ser possível alterar os dados do usuário
+
