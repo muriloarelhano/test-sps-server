@@ -57,11 +57,6 @@ export const updateUserSchema = z
 				message: "Tipo de usuário deve ser 'admin', 'user'",
 			})
 			.optional(),
-		password: z
-			.string({
-				invalid_type_error: "Senha deve ser uma string",
-			})
-			.optional(),
 	})
 	.refine((data) => Object.keys(data).length > 0, {
 		message: "Pelo menos um campo deve ser fornecido para atualização",

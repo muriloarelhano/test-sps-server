@@ -1,15 +1,12 @@
 import { Router } from "express";
-import { authenticateJwt } from "../auth/middleware.js";
 import { UserRepository } from "./userRepository.js";
-import { UserService } from "./userService.js";
 import { ValidationError } from "./userSchemas.js";
+import { UserService } from "./userService.js";
 
 const userRoutes = Router();
 
 const userRepository = new UserRepository();
 const userService = new UserService(userRepository);
-
-userRoutes.use(authenticateJwt);
 
 userRoutes.get("/users", async (req, res) => {
 	try {
@@ -91,7 +88,7 @@ userRoutes.post("/users", async (req, res) => {
 	}
 });
 
-userRoutes.put("/users/:id", async (req, res) => {
+userRoutes.put("/users/:id", async (req, res, next) => {
 	try {
 		const { id } = req.params;
 		const userId = Number.parseInt(id);
@@ -103,7 +100,11 @@ userRoutes.put("/users/:id", async (req, res) => {
 		}
 
 		try {
-			const updatedUser = await userService.updateUser(userId, req.body);
+			const updatedUser = await userService.updateUser(
+				userId,
+				req.body,
+				req.auth.type,
+			);
 			res.json(updatedUser);
 		} catch (error) {
 			if (error instanceof ValidationError) {
@@ -120,7 +121,8 @@ userRoutes.put("/users/:id", async (req, res) => {
 			if (error.message === "Email already registered") {
 				return res.status(409).json({ message: "Email já cadastrado" });
 			}
-			throw error;
+
+			next(error);
 		}
 	} catch (error) {
 		console.error(`Error updating user with ID ${req.params.id}:`, error);
@@ -132,17 +134,23 @@ userRoutes.delete("/users/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const userId = Number.parseInt(id);
+		const currentUserId = req.auth.userId;
 
 		if (Number.isNaN(userId)) {
 			return res.status(400).json({ message: "Invalid user ID format" });
 		}
 
 		try {
-			await userService.deleteUser(userId);
+			await userService.deleteUser(userId, currentUserId);
 			res.status(204).send();
 		} catch (error) {
 			if (error.message === "User not found") {
 				return res.status(404).json({ message: "User not found" });
+			}
+			if (error.message === "Cannot delete your own user account") {
+				return res
+					.status(403)
+					.json({ message: "Você não pode deletar a sua própria conta" });
 			}
 			throw error;
 		}

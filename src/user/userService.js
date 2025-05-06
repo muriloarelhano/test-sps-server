@@ -43,13 +43,20 @@ export class UserService {
 		}
 	}
 
-	async updateUser(id, userData) {
+	async updateUser(id, userData, currentUserType) {
 		try {
 			const validatedData = updateUserSchema.parse(userData);
 
 			const existingUser = await this.userRepository.findById(id);
 			if (!existingUser) {
 				throw new Error("User not found");
+			}
+
+			if (
+				currentUserType !== "admin" &&
+				existingUser.type !== validatedData.type
+			) {
+				throw new Error("O usuário não pode ser promovido a admin");
 			}
 
 			if (validatedData.email && validatedData.email !== existingUser.email) {
@@ -70,10 +77,14 @@ export class UserService {
 		}
 	}
 
-	async deleteUser(id) {
+	async deleteUser(id, currentUserId) {
 		const existingUser = await this.userRepository.findById(id);
 		if (!existingUser) {
 			throw new Error("User not found");
+		}
+
+		if (id === currentUserId) {
+			throw new Error("Cannot delete your own user account");
 		}
 
 		await this.userRepository.delete(id);

@@ -21,6 +21,7 @@ authRoutes.post("/login", async (req, res) => {
 		res.status(200).json(result);
 	} catch (error) {
 		console.error("Login error:", error);
+
 		if (error.message === "Invalid credentials") {
 			return res.status(401).json({ message: "Invalid credentials" });
 		}

@@ -9,7 +9,7 @@ export class AuthService {
 
 	async login(email, password) {
 		const user = await this.authRepository.findUserByEmail(email);
-		
+
 		if (!user || user.password !== password) {
 			throw new Error("Invalid credentials");
 		}
@@ -21,7 +21,7 @@ export class AuthService {
 				type: user.type,
 			},
 			JWT_SECRET,
-			{ expiresIn: "1h" }
+			{ expiresIn: "1h" },
 		);
 
 		return {
