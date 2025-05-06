@@ -1,0 +1,57 @@
+# SPS Server API Requests
+@baseUrl = http://localhost:3000
+@authToken = {{login.response.body.token}}
+
+### Variables
+@userId = 2
+
+### Authentication Endpoints
+
+# @name login
+POST {{baseUrl}}/login
+Content-Type: application/json
+
+{
+  "email": "admin@spsgroup.com.br",
+  "password": "1234"
+}
+
+## User Endpoints
+
+### Get all users
+GET {{baseUrl}}/users
+Authorization: Bearer {{authToken}}
+
+### Get current user (from token)
+GET {{baseUrl}}/users/me
+Authorization: Bearer {{authToken}}
+
+### Get user by ID
+GET {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{authToken}}
+
+### Create new user
+POST {{baseUrl}}/users
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "New User",
+  "email": "newuser@example.com",
+  "type": "user",
+  "password": "1234"
+}
+
+### Update user
+PUT {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{authToken}}
+Content-Type: application/json
+
+{
+  "name": "Updated User",
+  "email": "updateduser@example.com"
+}
+
+### Delete user
+DELETE {{baseUrl}}/users/{{userId}}
+Authorization: Bearer {{authToken}}

@@ -25,9 +25,13 @@ userRoutes.get("/users", authenticateJwt, async (req, res) => {
 	}
 });
 
-userRoutes.get("/users/:id", authenticateJwt, async (req, res) => {
+userRoutes.get("/users/me", authenticateJwt, async (req, res) => {
 	try {
-		const { id } = req.params;
+		const userId = req.auth.userId;
+
+		if (!userId) {
+			return res.status(400).json({ message: "User ID not found in token" });
+		}
 
 		const users = await db
 			.select({
@@ -37,7 +41,38 @@ userRoutes.get("/users/:id", authenticateJwt, async (req, res) => {
 				type: usersTable.type,
 			})
 			.from(usersTable)
-			.where(eq(usersTable.id, Number.parseInt(id)))
+			.where(eq(usersTable.id, userId))
+			.execute();
+
+		if (users.length === 0) {
+			return res.status(404).json({ message: "User not found" });
+		}
+
+		res.json(users[0]);
+	} catch (error) {
+		console.error("Error fetching current user:", error);
+		res.status(500).json({ message: "Error fetching user data" });
+	}
+});
+
+userRoutes.get("/users/:id", authenticateJwt, async (req, res) => {
+	try {
+		const { id } = req.params;
+		const userId = Number.parseInt(id);
+
+		if (Number.isNaN(userId)) {
+			return res.status(400).json({ message: "Invalid user ID format" });
+		}
+
+		const users = await db
+			.select({
+				id: usersTable.id,
+				name: usersTable.name,
+				email: usersTable.email,
+				type: usersTable.type,
+			})
+			.from(usersTable)
+			.where(eq(usersTable.id, userId))
 			.execute();
 
 		if (users.length === 0) {
