@@ -2,13 +2,16 @@ import { Router } from "express";
 import { authenticateJwt } from "../auth/middleware.js";
 import { UserRepository } from "./userRepository.js";
 import { UserService } from "./userService.js";
+import { ValidationError } from "./userSchemas.js";
 
 const userRoutes = Router();
 
 const userRepository = new UserRepository();
 const userService = new UserService(userRepository);
 
-userRoutes.get("/users", authenticateJwt, async (req, res) => {
+userRoutes.use(authenticateJwt);
+
+userRoutes.get("/users", async (req, res) => {
 	try {
 		const users = await userService.getAllUsers();
 		res.json(users);
@@ -18,7 +21,7 @@ userRoutes.get("/users", authenticateJwt, async (req, res) => {
 	}
 });
 
-userRoutes.get("/users/me", authenticateJwt, async (req, res) => {
+userRoutes.get("/users/me", async (req, res) => {
 	try {
 		const userId = req.auth.userId;
 
@@ -41,7 +44,7 @@ userRoutes.get("/users/me", authenticateJwt, async (req, res) => {
 	}
 });
 
-userRoutes.get("/users/:id", authenticateJwt, async (req, res) => {
+userRoutes.get("/users/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const userId = Number.parseInt(id);
@@ -65,71 +68,67 @@ userRoutes.get("/users/:id", authenticateJwt, async (req, res) => {
 	}
 });
 
-userRoutes.post("/users", authenticateJwt, async (req, res) => {
+userRoutes.post("/users", async (req, res) => {
 	try {
-		const { name, email, type, password } = req.body;
-
-		if (!name || !email || !type || !password) {
-			return res.status(400).json({
-				message: "All fields are required: name, email, type, password",
-			});
-		}
-
 		try {
-			const createdUser = await userService.createUser({
-				name,
-				email,
-				type,
-				password,
-			});
+			const createdUser = await userService.createUser(req.body);
 			res.status(201).json(createdUser);
 		} catch (error) {
+			if (error instanceof ValidationError) {
+				return res.status(400).json({
+					message: "Dados de usuário inválidos",
+					errors: error.errors,
+				});
+			}
 			if (error.message === "Email already registered") {
-				return res.status(409).json({ message: "Email already registered" });
+				return res.status(409).json({ message: "Email já cadastrado" });
 			}
 			throw error;
 		}
 	} catch (error) {
 		console.error("Error creating user:", error);
-		res.status(500).json({ message: "Error creating user" });
+		res.status(500).json({ message: "Erro ao criar usuário" });
 	}
 });
 
-userRoutes.put("/users/:id", authenticateJwt, async (req, res) => {
+userRoutes.put("/users/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const userId = Number.parseInt(id);
-		const { name, email, type, password } = req.body;
 
 		if (Number.isNaN(userId)) {
-			return res.status(400).json({ message: "Invalid user ID format" });
+			return res
+				.status(400)
+				.json({ message: "Formato de ID de usuário inválido" });
 		}
 
-		const updateData = {};
-		if (name) updateData.name = name;
-		if (email) updateData.email = email;
-		if (type) updateData.type = type;
-		if (password) updateData.password = password;
-
 		try {
-			const updatedUser = await userService.updateUser(userId, updateData);
+			const updatedUser = await userService.updateUser(userId, req.body);
 			res.json(updatedUser);
 		} catch (error) {
-			if (error.message === "User not found") {
-				return res.status(404).json({ message: "User not found" });
+			if (error instanceof ValidationError) {
+				return res.status(400).json({
+					message: "Dados de atualização inválidos",
+					errors: error.errors,
+				});
 			}
+
+			if (error.message === "User not found") {
+				return res.status(404).json({ message: "Usuário não encontrado" });
+			}
+
 			if (error.message === "Email already registered") {
-				return res.status(409).json({ message: "Email already registered" });
+				return res.status(409).json({ message: "Email já cadastrado" });
 			}
 			throw error;
 		}
 	} catch (error) {
 		console.error(`Error updating user with ID ${req.params.id}:`, error);
-		res.status(500).json({ message: "Error updating user" });
+		res.status(500).json({ message: "Erro ao atualizar usuário" });
 	}
 });
 
-userRoutes.delete("/users/:id", authenticateJwt, async (req, res) => {
+userRoutes.delete("/users/:id", async (req, res) => {
 	try {
 		const { id } = req.params;
 		const userId = Number.parseInt(id);

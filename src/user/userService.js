@@ -1,3 +1,10 @@
+import { ZodError } from "zod";
+import {
+	createUserSchema,
+	updateUserSchema,
+	ValidationError,
+} from "./userSchemas.js";
+
 export class UserService {
 	constructor(userRepository) {
 		this.userRepository = userRepository;
@@ -16,27 +23,51 @@ export class UserService {
 	}
 
 	async createUser(userData) {
-		const existingUser = await this.userRepository.findByEmail(userData.email);
-		if (existingUser) {
-			throw new Error("Email already registered");
+		try {
+			// Validar dados de entrada usando Zod
+			const validatedData = createUserSchema.parse(userData);
+
+			const existingUser = await this.userRepository.findByEmail(
+				validatedData.email,
+			);
+			if (existingUser) {
+				throw new Error("Email already registered");
+			}
+
+			return this.userRepository.create(validatedData);
+		} catch (error) {
+			if (error.name === "ZodError") {
+				throw ValidationError.fromZodError(error);
+			}
+			throw error;
 		}
-		return this.userRepository.create(userData);
 	}
 
 	async updateUser(id, userData) {
-		const existingUser = await this.userRepository.findById(id);
-		if (!existingUser) {
-			throw new Error("User not found");
-		}
+		try {
+			const validatedData = updateUserSchema.parse(userData);
 
-		if (userData.email && userData.email !== existingUser.email) {
-			const emailExists = await this.userRepository.findByEmail(userData.email);
-			if (emailExists) {
-				throw new Error("Email already registered");
+			const existingUser = await this.userRepository.findById(id);
+			if (!existingUser) {
+				throw new Error("User not found");
 			}
-		}
 
-		return this.userRepository.update(id, userData);
+			if (validatedData.email && validatedData.email !== existingUser.email) {
+				const emailExists = await this.userRepository.findByEmail(
+					validatedData.email,
+				);
+				if (emailExists) {
+					throw new Error("Email already registered");
+				}
+			}
+
+			return this.userRepository.update(id, validatedData);
+		} catch (error) {
+			if (error instanceof ZodError) {
+				throw ValidationError.fromZodError(error);
+			}
+			throw error;
+		}
 	}
 
 	async deleteUser(id) {
@@ -44,7 +75,7 @@ export class UserService {
 		if (!existingUser) {
 			throw new Error("User not found");
 		}
-		
+
 		await this.userRepository.delete(id);
 		return true;
 	}
