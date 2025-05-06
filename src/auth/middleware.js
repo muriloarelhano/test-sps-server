@@ -1,5 +1,5 @@
 import { expressjwt } from "express-jwt";
-import { JWT_SECRET } from "./routes.js";
+import { JWT_SECRET } from "./authService.js";
 
 export const authenticateJwt = expressjwt({
 	secret: JWT_SECRET,
