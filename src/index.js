@@ -2,7 +2,7 @@ import cors from "cors";
 import express from "express";
 import { authRoutes } from "./auth/authRoutes.js";
 import { userRoutes } from "./user/userRoutes.js";
-import { authenticateJwt, handleAuthErrors } from "./auth/middleware.js";
+import { authenticateJwt, handleAuthErrors } from "./auth/middlewares.js";
 import { handleGenericErrors } from "./utils/errorHandler.js";
 
 const app = express();

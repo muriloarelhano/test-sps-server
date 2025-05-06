@@ -3,8 +3,7 @@ export function handleGenericErrors(error, req, res, next) {
 	const message = error.message || "Internal Server Error";
 
 	res.status(statusCode).json({
-		status: "error",
 		message,
-		...(process.env.NODE_ENV === "development" && { stack: error.stack }),
+		statusCode,
 	});
 }
